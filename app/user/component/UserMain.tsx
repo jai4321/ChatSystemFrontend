@@ -1,13 +1,17 @@
 "use client";
 import UserList from "@/app/user/component/UserList";
+import { useToast } from "@/context/ToastContext";
 import { use, useEffect, useRef, useState } from "react";
 import { json } from "stream/consumers";
 
 export default function UserMain({ token }: any) {
+  const { showToast } = useToast();
   const [userList, setUserList] = useState([]);
   const [receiverId, setReceiverId] = useState("");
   const [message, setMessage] = useState("");
+  const [messageList, setMessageList] = useState([]);
   const [receivedMessage, setReceivedMessage] = useState("");
+  const messageEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const getUserList = async () => {
     const response = await fetch("http://localhost:3000/api/user", {
@@ -26,6 +30,25 @@ export default function UserMain({ token }: any) {
     console.log(receiverId);
     setReceiverId(receiverId);
   };
+  const fetchMessages = async (receiverId: string) => {
+    const responese = await fetch("http://localhost:3000/api/user", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ receiverId: receiverId }),
+      credentials: "include",
+    });
+    const data = await responese.json();
+    if (data.status !== 200) {
+      showToast(data.message, data.status);
+    }
+    console.log(data.messageList);
+    setMessageList(data.messageList);
+  };
+  const scrollToBottom = () => {
+    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
   // 1. Runs only once for user list polling
   useEffect(() => {
     const fetchData = async () => {
@@ -38,14 +61,11 @@ export default function UserMain({ token }: any) {
     fetchData();
     return () => clearInterval(intervalId);
   }, []);
-
   // 2. Runs when receiverId changes to setup WebSocket
   useEffect(() => {
     if (!receiverId) return;
-
     const socket = new WebSocket("ws://localhost:8080");
     socketRef.current = socket;
-
     socket.onopen = () => {
       console.log("WebSocket connected");
       socket.send(
@@ -55,28 +75,31 @@ export default function UserMain({ token }: any) {
           receiverId: receiverId,
         })
       );
+      fetchMessages(receiverId);
     };
-
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       setReceivedMessage(data.message);
+      fetchMessages(receiverId);
       console.log("Message received:", event.data);
     };
-
     socket.onerror = (err) => {
       console.error("WebSocket error:", err);
     };
-
     socket.onclose = () => {
       console.log("WebSocket disconnected");
-      socket.send(JSON.stringify({ type: "disconnect", token: token }));
     };
-
     return () => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: "disconnect", token: token }));
+      }
       socket.close();
     };
   }, [receiverId]);
 
+  useEffect(() => {
+    scrollToBottom();
+  }, [messageList, receivedMessage]);
   const buttonHandler = async () => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       const payload = {
@@ -87,6 +110,7 @@ export default function UserMain({ token }: any) {
       };
       socketRef.current.send(JSON.stringify(payload));
       setMessage(""); // Clear the input after sending
+      await fetchMessages(receiverId);
     } else {
       console.warn("WebSocket is not connected.");
     }
@@ -105,9 +129,25 @@ export default function UserMain({ token }: any) {
       </div>
       {receiverId && (
         <div className="messageBox">
-          <div className="messageList"></div>
+          <div className="messageList">
+            {messageList &&
+              messageList.map((message: any) => {
+                return (
+                  <div
+                    className={
+                      message.senderId == receiverId
+                        ? "messageOther"
+                        : "messageMe"
+                    }
+                    key={message._id}
+                  >
+                    <p>{message.message}</p>
+                  </div>
+                );
+              })}
+            <div ref={messageEndRef}></div>
+          </div>
           <div className="messageBoxBody">
-            <p>{receivedMessage}</p>
             <input
               type="text"
               name="message"
