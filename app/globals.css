@@ -1,0 +1,182 @@
+a, button {
+  cursor: pointer;
+}
+.userForm {
+  display: flex;
+  justify-content: center;
+  height: 95vh;
+}
+
+h3{
+  text-align: center;
+}
+
+.userForm > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px 0px;
+  width: 500px;
+}
+
+.userForm > div input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #0259ae;
+  color: #033362;
+}
+
+.userForm > div button {
+  padding: 10px;
+  background: #0259ae;
+  color: white;
+  border-radius: 5px;
+  border: 0px;
+  width: 200px;
+}
+.userForm > div .errors {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+
+.toast {
+  position: fixed;
+  top: 30px;
+  right: 50px;
+  padding: 10px 30px;
+  border-radius: 5px;
+  font-weight: 500;
+  border-bottom: 0 !important;
+}
+.toast-422,
+.toast-500 {
+  color: white;
+  background: rgb(193, 20, 20);
+}
+.toast-200 {
+  color: white;
+  background: rgb(5, 150, 5);
+}
+.toast-200 .toastProgress {
+  background: linear-gradient(45deg, #00ff00, #78ff78);
+}
+.toast-422 .toastProgress,
+.toast-500 .toastProgress {
+  background: linear-gradient(45deg, #f20000, #ff7878);
+}
+.toastProgress {
+  margin: 0;
+  padding: 0;
+  width: 0%;
+  height: 5px;
+  position: absolute;
+  left: 0px;
+  border-radius: 0px 0px 5px 5px;
+  bottom: 0px;
+  animation: progress 3s linear;
+}
+
+@keyframes progress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 101%;
+  }
+}
+
+.MessageTab {
+  display: flex;
+  overflow: hidden;
+}
+
+.sidebar {
+  box-sizing: border-box;
+  width: 25%;
+  padding: 10px;
+  border-right: 2px solid #d2b8b8;
+}
+.sidebar input {
+  width: 100%;
+  padding: 5px 10px;
+  border: 2px solid #d2b8b8;
+  border-radius: 100px;
+}
+
+.messageBox {
+  width: 75%;
+  height: 90vh;
+  position: relative;
+  padding: 10px 60px;
+}
+
+.sidebar .userList .userListItem {
+  display: flex;
+  align-items: center;
+}
+.sidebar .userList .userListItem .userListItemTop {
+  width: 20%;
+  padding-right: 10px;
+}
+
+.messageBox .messageList {
+  height: 90%;
+  position: relative;
+}
+
+.messageBox .messageList .messageMe {
+  display: flex;
+  justify-content: end;
+}
+.messageBox .messageList .messageOther {
+  display: flex;
+}
+.messageBoxBody {
+  display: flex;
+  justify-content: space-between;
+}
+.messageBoxBody input {
+  width: 70%;
+  height: 50px;
+  border: 2px solid #d2b8b8;
+  padding: 10px;
+  border-radius: 100px;
+  box-sizing: border-box;
+}
+.searchBar
+{
+  padding: 10px 0px;
+}
+.messageBoxBody button {
+  width: 24%;
+  height: 50px;
+  border-radius: 100px;
+  border: 2px solid #d2b8b8;
+}
+
+.userListItemBottom
+{
+  width: 80%  ;
+  border-bottom: 1px solid rgb(172, 172, 172);
+}
+
+.userListItem{
+  padding: 10px;
+  cursor: pointer;
+  background:whitesmoke;
+  transition: all 0.3s ease;
+  margin-bottom: 5px;
+}
+
+.userListItem:hover{
+  transform: scale(1.02);
+}
+
+.formButton {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+}
