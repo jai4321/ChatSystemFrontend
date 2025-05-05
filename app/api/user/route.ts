@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({receiverId: payload.receiverId}),
+    body: JSON.stringify({receiverId: payload.receiverId, skip: payload.skip, limit: payload.limit}),
   });
   const data = await fetchData.json();
   console.log(data);

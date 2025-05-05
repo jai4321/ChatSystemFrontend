@@ -1,11 +1,15 @@
 "use client";
 import UserList from "@/app/user/component/UserList";
 import { useToast } from "@/context/ToastContext";
-import { use, useEffect, useRef, useState } from "react";
+import React, { use, useEffect, useRef, useState } from "react";
 import { json } from "stream/consumers";
+import UserMessageList from "./UserMessageList";
 
 export default function UserMain({ token }: any) {
   const { showToast } = useToast();
+  const [skipData, setSkipData] = useState(15);
+  const [messageOver, setMessageOver] = useState(false);
+  const [preMessage, setPreMessage] = useState([]);
   const [userList, setUserList] = useState([]);
   const [receiverId, setReceiverId] = useState("");
   const [message, setMessage] = useState("");
@@ -23,7 +27,7 @@ export default function UserMain({ token }: any) {
     });
     const data = await response.json();
     if (data.status == 200) {
-      return data.users;
+      return data.userList;
     }
   };
   const receiverSetter = (receiverId: string) => {
@@ -36,20 +40,59 @@ export default function UserMain({ token }: any) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ receiverId: receiverId }),
+      body: JSON.stringify({
+        receiverId: receiverId,
+        skip: skipData,
+        limit: 15,
+      }),
       credentials: "include",
     });
     const data = await responese.json();
     if (data.status !== 200) {
       showToast(data.message, data.status);
     }
-    console.log(data.messageList);
+    console.log(messageOver);
     setMessageList(data.messageList);
+    setMessageOver(data.over);
   };
+
   const scrollToBottom = () => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-  // 1. Runs only once for user list polling
+  const limitHandler = async (e: React.UIEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    if (container.scrollTop === 0 && !messageOver) {
+      const prevScrollHeight = container.scrollHeight;
+      const newSkip = skipData + 10;
+      setSkipData(newSkip);
+
+      const response = await fetch("http://localhost:3000/api/user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          receiverId: receiverId,
+          skip: newSkip,
+          limit: 10,
+        }),
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (data.status !== 200) {
+        showToast(data.message, data.status);
+        return;
+      }
+      // Prepend new messages
+      setMessageOver(data.over);
+      setPreMessage((prevMessages) => [...data.messageList, ...prevMessages]);
+      const newScrollHeight = container.scrollHeight;
+      const scrollDiff = newScrollHeight - prevScrollHeight;
+      container.scrollTop = scrollDiff;
+    }
+  };
+
+  // Runs only once for user list polling
   useEffect(() => {
     const fetchData = async () => {
       const data = await getUserList();
@@ -61,7 +104,7 @@ export default function UserMain({ token }: any) {
     fetchData();
     return () => clearInterval(intervalId);
   }, []);
-  // 2. Runs when receiverId changes to setup WebSocket
+  // Runs when receiverId changes to setup WebSocket
   useEffect(() => {
     if (!receiverId) return;
     const socket = new WebSocket("ws://localhost:8080");
@@ -96,7 +139,7 @@ export default function UserMain({ token }: any) {
       socket.close();
     };
   }, [receiverId]);
-
+  // Scroll To Bottom when Message Load
   useEffect(() => {
     scrollToBottom();
   }, [messageList, receivedMessage]);
@@ -129,20 +172,29 @@ export default function UserMain({ token }: any) {
       </div>
       {receiverId && (
         <div className="messageBox">
-          <div className="messageList">
+          <div className="messageList" onScroll={limitHandler}>
+            {preMessage &&
+              preMessage.map((message: any) => {
+                return (
+                  <UserMessageList
+                    key={message._id}
+                    messageid={message._id}
+                    receiverId={receiverId}
+                    senderId={message.senderId}
+                    message={message.message}
+                  />
+                );
+              })}
             {messageList &&
               messageList.map((message: any) => {
                 return (
-                  <div
-                    className={
-                      message.senderId == receiverId
-                        ? "messageOther"
-                        : "messageMe"
-                    }
+                  <UserMessageList
                     key={message._id}
-                  >
-                    <p>{message.message}</p>
-                  </div>
+                    messageid={message._id}
+                    receiverId={receiverId}
+                    senderId={message.senderId}
+                    message={message.message}
+                  />
                 );
               })}
             <div ref={messageEndRef}></div>

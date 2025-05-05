@@ -1,3 +1,8 @@
+html, body{
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
 a, button {
   cursor: pointer;
 }
@@ -90,11 +95,13 @@ h3{
 .MessageTab {
   display: flex;
   overflow: hidden;
+  height: 100%;
+  padding: 20px 0px;
+  box-sizing: border-box;
 }
 
 .sidebar {
-  box-sizing: border-box;
-  width: 25%;
+  width: 15%;
   padding: 10px;
   border-right: 2px solid #d2b8b8;
 }
@@ -162,8 +169,12 @@ h3{
 {
   width: 80%  ;
   border-bottom: 1px solid rgb(172, 172, 172);
+  font-size: 14px;
 }
-
+.userListItemBottom p
+{
+  margin: 0;
+}
 .userListItem{
   padding: 10px;
   cursor: pointer;

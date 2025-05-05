@@ -8,6 +8,14 @@ export default function UserList(userListProps: UserListProps) {
     <div className="userList">
       {userList &&
         userList.map((item: any) => {
+          const date = new Date(item.latestTimestamp);
+          let hours = date.getHours();
+          const minutes = date.getMinutes();
+          const ampm = hours >= 12 ? "PM" : "AM";
+          hours = hours % 12;
+          hours = hours ? hours : 12; // the hour '0' should be '12'
+          const formattedMinutes = minutes < 10 ? "0" + minutes : minutes;
+          const formattedTime = `${hours}:${formattedMinutes} ${ampm}`;
           return (
             <div
               className="userListItem"
@@ -23,9 +31,12 @@ export default function UserList(userListProps: UserListProps) {
               </div>
               <div className="userListItemBottom">
                 <p>{item.username}</p>
-                <p>
-                  Last Message <small>14:15 PM</small>
-                </p>
+                {item.latestMessage && (
+                  <p>
+                    {item.latestMessage}{" "}
+                    <small>{formattedTime}</small>
+                  </p>
+                )}
               </div>
             </div>
           );
