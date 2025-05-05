@@ -1,7 +1,13 @@
 "use client";
 import UserList from "@/app/user/component/UserList";
 import { useToast } from "@/context/ToastContext";
-import React, { use, useEffect, useRef, useState } from "react";
+import React, {
+  use,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { json } from "stream/consumers";
 import UserMessageList from "./UserMessageList";
 
@@ -17,6 +23,8 @@ export default function UserMain({ token }: any) {
   const [receivedMessage, setReceivedMessage] = useState("");
   const messageEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<WebSocket | null>(null);
+  const messageListRef = useRef<HTMLDivElement>(null);
+  const prevScrollHeightRef = useRef<number>(0);
   const getUserList = async () => {
     const response = await fetch("http://localhost:3000/api/user", {
       method: "GET",
@@ -30,10 +38,12 @@ export default function UserMain({ token }: any) {
       return data.userList;
     }
   };
+
   const receiverSetter = (receiverId: string) => {
     console.log(receiverId);
     setReceiverId(receiverId);
   };
+
   const fetchMessages = async (receiverId: string) => {
     const responese = await fetch("http://localhost:3000/api/user", {
       method: "POST",
@@ -51,20 +61,19 @@ export default function UserMain({ token }: any) {
     if (data.status !== 200) {
       showToast(data.message, data.status);
     }
-    console.log(messageOver);
-    setMessageList(data.messageList);
-    setMessageOver(data.over);
+    return data;
   };
 
   const scrollToBottom = () => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-  const limitHandler = async (e: React.UIEvent<HTMLDivElement>) => {
-    const container = e.currentTarget;
-    if (container.scrollTop === 0 && !messageOver) {
-      const prevScrollHeight = container.scrollHeight;
-      const newSkip = skipData + 10;
-      setSkipData(newSkip);
+
+  const handleScroll = async () => {
+    const chatBox = messageListRef.current;
+    if (!chatBox) return;
+
+    if (chatBox.scrollTop === 0 && !messageOver) {
+      prevScrollHeightRef.current = chatBox.scrollHeight;
 
       const response = await fetch("http://localhost:3000/api/user", {
         method: "POST",
@@ -73,22 +82,21 @@ export default function UserMain({ token }: any) {
         },
         body: JSON.stringify({
           receiverId: receiverId,
-          skip: newSkip,
+          skip: skipData,
           limit: 10,
         }),
         credentials: "include",
       });
+
       const data = await response.json();
-      if (data.status !== 200) {
-        showToast(data.message, data.status);
-        return;
-      }
-      // Prepend new messages
+
+      const newMessages = data.messageList.filter(
+        (msg: any) => !preMessage.some((prev) => prev._id === msg._id)
+      );
+
+      setPreMessage((prev) => [...newMessages, ...prev]);
+      setSkipData((prev) => prev + data.messageList.length);
       setMessageOver(data.over);
-      setPreMessage((prevMessages) => [...data.messageList, ...prevMessages]);
-      const newScrollHeight = container.scrollHeight;
-      const scrollDiff = newScrollHeight - prevScrollHeight;
-      container.scrollTop = scrollDiff;
     }
   };
 
@@ -118,13 +126,18 @@ export default function UserMain({ token }: any) {
           receiverId: receiverId,
         })
       );
-      fetchMessages(receiverId);
+      fetchMessages(receiverId).then((data: any) => {
+        setMessageList(data.messageList);
+        setMessageOver(data.over);
+      });
     };
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       setReceivedMessage(data.message);
-      fetchMessages(receiverId);
-      console.log("Message received:", event.data);
+      fetchMessages(receiverId).then((data: any) => {
+        setMessageList(data.messageList);
+        setMessageOver(data.over);
+      });
     };
     socket.onerror = (err) => {
       console.error("WebSocket error:", err);
@@ -139,10 +152,34 @@ export default function UserMain({ token }: any) {
       socket.close();
     };
   }, [receiverId]);
+
+  useEffect(() => {
+    const chatBox = messageListRef.current;
+    if (!chatBox) return;
+
+    chatBox.addEventListener("scroll", handleScroll);
+    return () => {
+      chatBox.removeEventListener("scroll", handleScroll);
+    };
+  }, [receiverId, messageOver, skipData, preMessage]);
+
+  useLayoutEffect(() => {
+    const chatBox = messageListRef.current;
+    if (!chatBox) return;
+
+    const newScrollHeight = chatBox.scrollHeight;
+    const scrollDiff = newScrollHeight - prevScrollHeightRef.current;
+
+    if (scrollDiff > 0) {
+      chatBox.scrollTop = scrollDiff;
+    }
+  }, [preMessage]);
+
   // Scroll To Bottom when Message Load
   useEffect(() => {
     scrollToBottom();
   }, [messageList, receivedMessage]);
+
   const buttonHandler = async () => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       const payload = {
@@ -153,7 +190,10 @@ export default function UserMain({ token }: any) {
       };
       socketRef.current.send(JSON.stringify(payload));
       setMessage(""); // Clear the input after sending
-      await fetchMessages(receiverId);
+      fetchMessages(receiverId).then((data: any) => {
+        setMessageList(data.messageList);
+        setMessageOver(data.over);
+      });
     } else {
       console.warn("WebSocket is not connected.");
     }
@@ -172,7 +212,7 @@ export default function UserMain({ token }: any) {
       </div>
       {receiverId && (
         <div className="messageBox">
-          <div className="messageList" onScroll={limitHandler}>
+          <div className="messageList" ref={messageListRef}>
             {preMessage &&
               preMessage.map((message: any) => {
                 return (
