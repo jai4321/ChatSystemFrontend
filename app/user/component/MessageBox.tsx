@@ -11,7 +11,7 @@ import React, {
 import { json } from "stream/consumers";
 import UserMessageList from "./UserMessageList";
 
-export default function UserMain({ token }: any) {
+export default function MessageBox({ token }: any) {
   const { showToast } = useToast();
   const [skipData, setSkipData] = useState(15);
   const [messageOver, setMessageOver] = useState(false);
@@ -44,7 +44,8 @@ export default function UserMain({ token }: any) {
     setReceiverId(receiverId);
   };
 
-  const fetchMessages = async (receiverId: string) => {
+  const fetchMessages = async (receiverId: string, skip: number = skipData) => {
+    console.log(skipData);
     const responese = await fetch("http://localhost:3000/api/user", {
       method: "POST",
       headers: {
@@ -52,7 +53,7 @@ export default function UserMain({ token }: any) {
       },
       body: JSON.stringify({
         receiverId: receiverId,
-        skip: skipData,
+        skip: skip,
         limit: 15,
       }),
       credentials: "include",
@@ -71,7 +72,9 @@ export default function UserMain({ token }: any) {
   const handleScroll = async () => {
     const chatBox = messageListRef.current;
     if (!chatBox) return;
-
+    if (chatBox.scrollTop === 0) {
+      console.log(preMessage.length);
+    }
     if (chatBox.scrollTop === 0 && !messageOver) {
       prevScrollHeightRef.current = chatBox.scrollHeight;
 
@@ -90,11 +93,10 @@ export default function UserMain({ token }: any) {
 
       const data = await response.json();
 
-      const newMessages = data.messageList.filter(
-        (msg: any) => !preMessage.some((prev) => prev._id === msg._id)
-      );
-
-      setPreMessage((prev) => [...newMessages, ...prev]);
+      // const newMessages = data.messageList.filter(
+      //   (msg: any) => !preMessage.some((prev) => prev._id === msg._id)
+      // );
+      setPreMessage((prev) => [...data.messageList, ...prev]);
       setSkipData((prev) => prev + data.messageList.length);
       setMessageOver(data.over);
     }
@@ -129,6 +131,7 @@ export default function UserMain({ token }: any) {
       fetchMessages(receiverId).then((data: any) => {
         setMessageList(data.messageList);
         setMessageOver(data.over);
+        setSkipData((prevData) => prevData + 10);
       });
     };
     socket.onmessage = (event) => {
@@ -190,7 +193,7 @@ export default function UserMain({ token }: any) {
       };
       socketRef.current.send(JSON.stringify(payload));
       setMessage(""); // Clear the input after sending
-      fetchMessages(receiverId).then((data: any) => {
+      fetchMessages(receiverId, 15).then((data: any) => {
         setMessageList(data.messageList);
         setMessageOver(data.over);
       });
@@ -240,15 +243,19 @@ export default function UserMain({ token }: any) {
             <div ref={messageEndRef}></div>
           </div>
           <div className="messageBoxBody">
-            <input
-              type="text"
-              name="message"
-              id=""
-              placeholder="Type Message Here...."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-            />
-            <button onClick={buttonHandler}>Send</button>
+            <form onSubmit={buttonHandler}>
+              <input
+                type="text"
+                name="message"
+                id=""
+                placeholder="Type Message Here...."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+              />
+              <button onClick={buttonHandler}>
+                <img src="/send.png" alt="" width="100%" />
+              </button>
+            </form>
           </div>
         </div>
       )}

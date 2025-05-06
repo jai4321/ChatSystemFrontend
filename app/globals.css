@@ -1,9 +1,11 @@
-html, body{
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
 }
-a, button {
+a,
+button {
   cursor: pointer;
 }
 .userForm {
@@ -12,7 +14,7 @@ a, button {
   height: 95vh;
 }
 
-h3{
+h3 {
   text-align: center;
 }
 
@@ -140,7 +142,7 @@ h3{
   justify-content: end;
 }
 
-.messageBox .messageList .messageMe p{
+.messageBox .messageList .messageMe p {
   padding: 10px 20px;
   background: rgb(220, 220, 220);
   border-radius: 5px;
@@ -151,7 +153,7 @@ h3{
   display: flex;
 }
 
-.messageBox .messageList .messageOther p{
+.messageBox .messageList .messageOther p {
   padding: 10px 20px;
   background: rgb(106, 125, 255);
   border-radius: 5px;
@@ -162,44 +164,73 @@ h3{
   display: flex;
   justify-content: space-between;
 }
-.messageBoxBody input {
+.messageBoxBody form {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 100px;
+  border: 1px solid black;
+  padding: 5px 20px;
+}
+
+.messageBoxBody form div {
+  width: 100%;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  border: 1px solid gray;
+  border-radius: 100px;
+}
+.messageBoxBody form input {
+  width: 90%;
+  border: none;
+  outline: none;
+}
+.messageBoxBody form button {
+  border: none;
+  outline: none;
+  width: 50px;
+  padding: 5px;
+  background: none;
+  font-size: 16px;
+  font-weight: bold;
+}
+/* .messageBoxBody input {
   width: 70%;
   height: 50px;
   border: 2px solid #d2b8b8;
   padding: 10px;
   border-radius: 100px;
   box-sizing: border-box;
-}
-.searchBar
-{
+} */
+.searchBar {
   padding: 10px 0px;
 }
-.messageBoxBody button {
+/* .messageBoxBody button {
   width: 24%;
   height: 50px;
   border-radius: 100px;
   border: 2px solid #d2b8b8;
-}
+} */
 
-.userListItemBottom
-{
-  width: 80%  ;
+.userListItemBottom {
+  width: 80%;
   border-bottom: 1px solid rgb(172, 172, 172);
   font-size: 14px;
 }
-.userListItemBottom p
-{
+.userListItemBottom p {
   margin: 0;
 }
-.userListItem{
+.userListItem {
   padding: 10px;
   cursor: pointer;
-  background:whitesmoke;
+  background: whitesmoke;
   transition: all 0.3s ease;
   margin-bottom: 5px;
 }
 
-.userListItem:hover{
+.userListItem:hover {
   transform: scale(1.02);
 }
 
