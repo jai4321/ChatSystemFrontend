@@ -139,9 +139,25 @@ h3{
   display: flex;
   justify-content: end;
 }
+
+.messageBox .messageList .messageMe p{
+  padding: 10px 20px;
+  background: rgb(220, 220, 220);
+  border-radius: 5px;
+  max-width: 40%;
+}
+
 .messageBox .messageList .messageOther {
   display: flex;
 }
+
+.messageBox .messageList .messageOther p{
+  padding: 10px 20px;
+  background: rgb(106, 125, 255);
+  border-radius: 5px;
+  max-width: 40%;
+}
+
 .messageBoxBody {
   display: flex;
   justify-content: space-between;
