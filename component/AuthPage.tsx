@@ -64,7 +64,7 @@ export default function AuthPage({ slug }: AuthPageProps) {
       }
     }
     if (!formFlag) {
-      const response = await fetch("http://localhost:3000/api/auth", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

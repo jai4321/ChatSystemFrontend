@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
   const payload = await request.json();
   if (payload.action === "register") {
-    const fetchData = await fetch("http://localhost:8080/register", {
+    const fetchData = await fetch(`${process.env.BACKEND_URL}/register`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     console.log(data);
     return NextResponse.json({ ...data, status: fetchData.status });
   } else if (payload.action === "login") {
-    const fetchData = await fetch("http://localhost:8080/login", {
+    const fetchData = await fetch(`${process.env.BACKEND_URL}/login`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",

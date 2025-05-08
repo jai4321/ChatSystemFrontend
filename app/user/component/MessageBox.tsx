@@ -27,7 +27,7 @@ export default function MessageBox({ token }: any) {
   const prevScrollHeightRef = useRef<number>(0);
 
   const getUserList = async () => {
-    const response = await fetch("http://localhost:3000/api/user", {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -53,14 +53,14 @@ export default function MessageBox({ token }: any) {
     const formData = new FormData();
     formData.append("file", file);
     console.log("inside");
-    const fetchToken = await fetch("http://localhost:3000/api/auth", {
+    const fetchToken = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth`, {
       method: "GET",
       credentials: "include",
     });
     const response = await fetchToken.json();
     // return true;
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", "http://localhost:8080/fileupload");
+    xhr.open("POST", `${process.env.NEXT_PUBLIC_BACKEND_URL}/fileupload`);
     xhr.setRequestHeader("Authorization", `Bearer ${response.token}`);
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) {
@@ -83,7 +83,7 @@ export default function MessageBox({ token }: any) {
 
   const fetchMessages = async (receiverId: string, skip: number = skipData) => {
     console.log(skipData);
-    const responese = await fetch("http://localhost:3000/api/user", {
+    const responese = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -115,7 +115,7 @@ export default function MessageBox({ token }: any) {
     if (chatBox.scrollTop === 0 && !messageOver) {
       prevScrollHeightRef.current = chatBox.scrollHeight;
 
-      const response = await fetch("http://localhost:3000/api/user", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -182,7 +182,7 @@ export default function MessageBox({ token }: any) {
   // Runs when receiverId changes to setup WebSocket
   useEffect(() => {
     if (!receiverId) return;
-    const socket = new WebSocket("ws://localhost:8080");
+    const socket = new WebSocket(`${process.env.NEXT_PUBLIC_SOCKET_URL}`);
     socketRef.current = socket;
     socket.onopen = () => {
       console.log("WebSocket connected");
