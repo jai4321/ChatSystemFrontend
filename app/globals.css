@@ -141,12 +141,12 @@ h3 {
   display: flex;
   justify-content: end;
 }
-
-.messageBox .messageList .messageMe p {
+.messageBox .messageList .messageMe div{
+  max-width: 40%;
   padding: 10px 20px;
   background: rgb(220, 220, 220);
   border-radius: 5px;
-  max-width: 40%;
+  margin-bottom: 10px;
 }
 
 .messageBox .messageList .messageOther {
@@ -159,29 +159,73 @@ h3 {
   border-radius: 5px;
   max-width: 40%;
 }
-
-.messageBoxBody {
+.attachDiv {
+  width: 50%;
   display: flex;
-  justify-content: space-between;
+  position: relative;
+}
+.attachDiv p {
+  margin: 0;
+}
+.fileInfo {
+  margin-top: 12px !important;
+  padding-left: 5px;
+}
+.attachDiv button {
+  position: absolute;
+  right: 0;
+  background: #c7c7c7;
+  border: 0;
+  border-radius: 100%;
+  color: white;
+  width: 20px;
+  height: 20px;
+  font-size: 9px;
+  font-weight: bold;
+}
+.attachDiv img {
+  width: 40px;
+  height: 40px;
+}
+.progressBar {
+  width: 0%;
+  background: red;
+  height: 2px;
+}
+.messageBoxBody
+{
+  border-radius: 40px;
+  border: 1px solid black;  
+  padding: 10px 35px;
 }
 .messageBoxBody form {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-radius: 100px;
-  border: 1px solid black;
-  padding: 5px 20px;
 }
 
-.messageBoxBody form div {
-  width: 100%;
-  padding: 10px;
-  display: flex;
-  justify-content: space-between;
-  border: 1px solid gray;
-  border-radius: 100px;
+.messageBoxBody form > .attachments button {
+  padding: 0;
+  margin-right: 5px;
+  width: 25px;
+  position: relative;
+  cursor: pointer;
 }
+.messageBoxBody form > .attachments .attachmentInput {
+  opacity: 0;
+  width: 25px;
+  height: 25px;
+  padding: 0;
+  margin-right: 5px;
+  width: 25px;
+  position: absolute;
+}
+
+.disableBtn {
+  filter: grayscale(1);
+}
+
 .messageBoxBody form input {
   width: 90%;
   border: none;

@@ -1,30 +1,31 @@
 "use client";
 import UserList from "@/app/user/component/UserList";
 import { useToast } from "@/context/ToastContext";
-import React, {
-  use,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
-import { json } from "stream/consumers";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import UserMessageList from "./UserMessageList";
-
+interface fileInfoTypes {
+  name: String;
+  url: String;
+}
 export default function MessageBox({ token }: any) {
   const { showToast } = useToast();
+  const [progress, setProgress] = useState(0);
+  const [canSend, setCanSend] = useState(true);
+  const [userList, setUserList] = useState([]);
   const [skipData, setSkipData] = useState(15);
   const [messageOver, setMessageOver] = useState(false);
-  const [preMessage, setPreMessage] = useState([]);
-  const [userList, setUserList] = useState([]);
+  const [preMessage, setPreMessage] = useState<any>([]);
   const [receiverId, setReceiverId] = useState("");
   const [message, setMessage] = useState("");
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [fileInfo, setFileInfo] = useState<fileInfoTypes | null>(null);
   const [messageList, setMessageList] = useState([]);
   const [receivedMessage, setReceivedMessage] = useState("");
   const messageEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const messageListRef = useRef<HTMLDivElement>(null);
   const prevScrollHeightRef = useRef<number>(0);
+
   const getUserList = async () => {
     const response = await fetch("http://localhost:3000/api/user", {
       method: "GET",
@@ -42,6 +43,42 @@ export default function MessageBox({ token }: any) {
   const receiverSetter = (receiverId: string) => {
     console.log(receiverId);
     setReceiverId(receiverId);
+  };
+
+  const fileHandler = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCanSend(false);
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAttachment(file);
+    const formData = new FormData();
+    formData.append("file", file);
+    console.log("inside");
+    const fetchToken = await fetch("http://localhost:3000/api/auth", {
+      method: "GET",
+      credentials: "include",
+    });
+    const response = await fetchToken.json();
+    // return true;
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "http://localhost:8080/fileupload");
+    xhr.setRequestHeader("Authorization", `Bearer ${response.token}`);
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        setProgress(percent);
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const response = JSON.parse(xhr.response);
+        setFileInfo({ name: file.name, url: response.fileurl });
+        setCanSend(true);
+      } else {
+        console.log("Upload Failed");
+      }
+    };
+
+    xhr.send(formData);
   };
 
   const fetchMessages = async (receiverId: string, skip: number = skipData) => {
@@ -96,9 +133,37 @@ export default function MessageBox({ token }: any) {
       // const newMessages = data.messageList.filter(
       //   (msg: any) => !preMessage.some((prev) => prev._id === msg._id)
       // );
-      setPreMessage((prev) => [...data.messageList, ...prev]);
+      setPreMessage((prev: any) => [...data.messageList, ...prev]);
       setSkipData((prev) => prev + data.messageList.length);
       setMessageOver(data.over);
+    }
+  };
+
+  const closeAttachHandler = () => {
+    setAttachment(null);
+    setCanSend(true);
+  };
+
+  const buttonHandler = async () => {
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      const payload = {
+        type: "message",
+        receiverId: receiverId,
+        message: message,
+        attachment: fileInfo,
+        token: token,
+      };
+      socketRef.current.send(JSON.stringify(payload));
+      setMessage("");
+      fetchMessages(receiverId, 15).then((data: any) => {
+        setMessageList(data.messageList);
+        setMessageOver(data.over);
+        setFileInfo(null);
+        setAttachment(null);
+        setProgress(0);
+      });
+    } else {
+      console.warn("WebSocket is not connected.");
     }
   };
 
@@ -182,25 +247,17 @@ export default function MessageBox({ token }: any) {
   useEffect(() => {
     scrollToBottom();
   }, [messageList, receivedMessage]);
-
-  const buttonHandler = async () => {
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      const payload = {
-        type: "message",
-        receiverId: receiverId,
-        message: message,
-        token: token,
-      };
-      socketRef.current.send(JSON.stringify(payload));
-      setMessage(""); // Clear the input after sending
-      fetchMessages(receiverId, 15).then((data: any) => {
-        setMessageList(data.messageList);
-        setMessageOver(data.over);
-      });
-    } else {
-      console.warn("WebSocket is not connected.");
+  useEffect(() => {
+    const fileInput = document.querySelector(
+      ".attachmentInput"
+    ) as HTMLInputElement | null;
+    if (fileInput) {
+      if (!attachment) {
+        fileInput.value = "";
+      }
     }
-  };
+  }, [attachment]);
+
   return (
     <section className="MessageTab">
       <div className="sidebar">
@@ -225,6 +282,7 @@ export default function MessageBox({ token }: any) {
                     receiverId={receiverId}
                     senderId={message.senderId}
                     message={message.message}
+                    attachments={message.attachments}
                   />
                 );
               })}
@@ -237,13 +295,45 @@ export default function MessageBox({ token }: any) {
                     receiverId={receiverId}
                     senderId={message.senderId}
                     message={message.message}
+                    attachments={message.attachments}
                   />
                 );
               })}
             <div ref={messageEndRef}></div>
           </div>
           <div className="messageBoxBody">
+            {attachment && (
+              <div className="attachDiv">
+                <img src="/assets/file.png" alt="" />
+                <div>
+                  {progress < 100 && (
+                    <p
+                      className="progressBar"
+                      style={{ width: `${progress}%` }}
+                    ></p>
+                  )}
+                  <p className="fileInfo">{attachment.name}</p>
+                </div>
+                <button type="button" onClick={closeAttachHandler}>
+                  X
+                </button>
+              </div>
+            )}
             <form onSubmit={buttonHandler}>
+              <div className="attachments">
+                <button type="button">
+                  <input
+                    type="file"
+                    className="attachmentInput"
+                    onChange={fileHandler}
+                  />
+                  <img
+                    src="https://cdn-icons-png.flaticon.com/512/8455/8455362.png"
+                    alt=""
+                    width="100%"
+                  />
+                </button>
+              </div>
               <input
                 type="text"
                 name="message"
@@ -252,8 +342,12 @@ export default function MessageBox({ token }: any) {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
               />
-              <button onClick={buttonHandler}>
-                <img src="/send.png" alt="" width="100%" />
+              <button
+                type="button"
+                onClick={buttonHandler}
+                className={canSend ? "" : "disableBtn"}
+              >
+                <img src="/assets/send.png" alt="" width="100%" />
               </button>
             </form>
           </div>
