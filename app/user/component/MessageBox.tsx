@@ -21,19 +21,23 @@ export default function MessageBox({ token }: any) {
   const [fileInfo, setFileInfo] = useState<fileInfoTypes | null>(null);
   const [messageList, setMessageList] = useState([]);
   const [receivedMessage, setReceivedMessage] = useState("");
+  const [search, setSearch] = useState("");
   const messageEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const messageListRef = useRef<HTMLDivElement>(null);
   const prevScrollHeightRef = useRef<number>(0);
-
+  const [userSearch, setUserSearch] = useState("");
   const getUserList = async () => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/user`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      }
+    );
     const data = await response.json();
     if (data.status == 200) {
       return data.userList;
@@ -53,15 +57,9 @@ export default function MessageBox({ token }: any) {
     const formData = new FormData();
     formData.append("file", file);
     console.log("inside");
-    const fetchToken = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth`, {
-      method: "GET",
-      credentials: "include",
-    });
-    const response = await fetchToken.json();
-    // return true;
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${process.env.NEXT_PUBLIC_BACKEND_URL}/fileupload`);
-    xhr.setRequestHeader("Authorization", `Bearer ${response.token}`);
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) {
         const percent = Math.round((event.loaded / event.total) * 100);
@@ -83,18 +81,21 @@ export default function MessageBox({ token }: any) {
 
   const fetchMessages = async (receiverId: string, skip: number = skipData) => {
     console.log(skipData);
-    const responese = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        receiverId: receiverId,
-        skip: skip,
-        limit: 15,
-      }),
-      credentials: "include",
-    });
+    const responese = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/user`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          receiverId: receiverId,
+          skip: skip,
+          limit: 15,
+        }),
+        credentials: "include",
+      }
+    );
     const data = await responese.json();
     if (data.status !== 200) {
       showToast(data.message, data.status);
@@ -115,18 +116,21 @@ export default function MessageBox({ token }: any) {
     if (chatBox.scrollTop === 0 && !messageOver) {
       prevScrollHeightRef.current = chatBox.scrollHeight;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          receiverId: receiverId,
-          skip: skipData,
-          limit: 10,
-        }),
-        credentials: "include",
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/user`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            receiverId: receiverId,
+            skip: skipData,
+            limit: 10,
+          }),
+          credentials: "include",
+        }
+      );
 
       const data = await response.json();
 
@@ -171,6 +175,7 @@ export default function MessageBox({ token }: any) {
   useEffect(() => {
     const fetchData = async () => {
       const data = await getUserList();
+      console.log(data);
       setUserList(data);
     };
     const intervalId = setInterval(() => {
@@ -213,9 +218,17 @@ export default function MessageBox({ token }: any) {
     socket.onclose = () => {
       console.log("WebSocket disconnected");
     };
-    return () => {
+    const handleBeforeUnload = () => {
       if (socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ type: "disconnect", token: token }));
+        socket.send(JSON.stringify({ type: "disconnect", token }));
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: "disconnect", token }));
       }
       socket.close();
     };
@@ -266,9 +279,16 @@ export default function MessageBox({ token }: any) {
             type="search"
             name="searchUser"
             placeholder="Search User...."
+            onKeyUp={(e: any) => {
+              setUserSearch(e.target.value);
+            }}
           />
         </div>
-        <UserList userList={userList} receiverSetter={receiverSetter} />
+        <UserList
+          userList={userList}
+          receiverSetter={receiverSetter}
+          search={search}
+        />
       </div>
       {receiverId && (
         <div className="messageBox">

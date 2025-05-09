@@ -1,13 +1,17 @@
 interface UserListProps {
   userList: any[];
   receiverSetter: (id: string) => void;
+  search: String;
 }
 export default function UserList(userListProps: UserListProps) {
-  const { userList, receiverSetter } = userListProps;
+  const { userList, receiverSetter, search } = userListProps;
+  const filteredList = search != "" ? userList.filter((item)=>{
+    return item.username.search(search) >= 0;
+  }) : userList;
   return (
     <div className="userList">
-      {userList &&
-        userList.map((item: any) => {
+      {filteredList &&
+        filteredList.map((item: any) => {
           const date = new Date(item.latestTimestamp);
           let hours = date.getHours();
           const minutes = date.getMinutes();
@@ -33,8 +37,7 @@ export default function UserList(userListProps: UserListProps) {
                 <p>{item.username}</p>
                 {item.latestMessage && (
                   <p>
-                    {item.latestMessage}{" "}
-                    <small>{formattedTime}</small>
+                    {item.latestMessage} <small>{formattedTime}</small>
                   </p>
                 )}
               </div>
